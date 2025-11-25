@@ -1,8 +1,21 @@
-import sys
 import math
 import random
+import sys
+
 import pygame
-from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_a, K_d, K_w, K_s, K_ESCAPE, QUIT, KEYDOWN
+from pygame.locals import (
+    K_DOWN,
+    K_ESCAPE,
+    K_LEFT,
+    K_RIGHT,
+    K_UP,
+    KEYDOWN,
+    QUIT,
+    K_a,
+    K_d,
+    K_s,
+    K_w,
+)
 
 # =============================
 # Config & Constants
@@ -78,6 +91,7 @@ HEIGHT = ROWS * TILE_SIZE + 60  # space for HUD
 
 # Utility
 
+
 def grid_to_px(col, row):
     return col * TILE_SIZE, row * TILE_SIZE
 
@@ -89,7 +103,7 @@ def px_center_of_cell(col, row):
 
 def is_wall(col, row):
     if 0 <= row < ROWS and 0 <= col < COLS:
-        return MAZE_LAYOUT[row][col] == '#'
+        return MAZE_LAYOUT[row][col] == "#"
     return True
 
 
@@ -105,13 +119,13 @@ class Maze:
         self.ghost_starts = []
         for r, line in enumerate(MAZE_LAYOUT):
             for c, ch in enumerate(line):
-                if ch == '.':
+                if ch == ".":
                     self.pellets.add((c, r))
-                elif ch == 'o':
+                elif ch == "o":
                     self.power_pellets.add((c, r))
-                elif ch == 'P' and self.player_start is None:
+                elif ch == "P" and self.player_start is None:
                     self.player_start = (c, r)
-                elif ch == 'G':
+                elif ch == "G":
                     self.ghost_starts.append((c, r))
         # Fallbacks
         if self.player_start is None:
@@ -124,17 +138,19 @@ class Maze:
         # Draw walls
         for r, line in enumerate(MAZE_LAYOUT):
             for c, ch in enumerate(line):
-                if ch == '#':
+                if ch == "#":
                     x, y = grid_to_px(c, r)
                     pygame.draw.rect(surf, NAVY, (x, y, TILE_SIZE, TILE_SIZE))
                     # inner outline for classic look
-                    pygame.draw.rect(surf, BLUE, (x+4, y+4, TILE_SIZE-8, TILE_SIZE-8), 2)
+                    pygame.draw.rect(
+                        surf, BLUE, (x + 4, y + 4, TILE_SIZE - 8, TILE_SIZE - 8), 2
+                    )
         # Draw pellets
-        for (c, r) in self.pellets:
+        for c, r in self.pellets:
             x, y = px_center_of_cell(c, r)
             pygame.draw.circle(surf, WHITE, (x, y), 3)
         # Draw power pellets
-        for (c, r) in self.power_pellets:
+        for c, r in self.power_pellets:
             x, y = px_center_of_cell(c, r)
             pygame.draw.circle(surf, WHITE, (x, y), 6)
 
@@ -228,7 +244,7 @@ class Player(Entity):
         if (c, r) in maze.power_pellets:
             maze.power_pellets.remove((c, r))
             self.score += 50
-            return 'power'
+            return "power"
         return None
 
     def draw(self, surf):
@@ -247,7 +263,7 @@ class Ghost(Entity):
 
     def available_dirs(self):
         options = []
-        for d in [(-1,0),(1,0),(0,-1),(0,1)]:
+        for d in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             ncol = int(round(self.col + d[0]))
             nrow = int(round(self.row + d[1]))
             if valid_cell(ncol, nrow):
@@ -291,7 +307,10 @@ class Ghost(Entity):
                 if self.eaten:
                     # Head home: choose direction minimizing distance to home
                     hx, hy = self.home
-                    options.sort(key=lambda d: (round(self.col)+d[0]-hx)**2 + (round(self.row)+d[1]-hy)**2)
+                    options.sort(
+                        key=lambda d: (round(self.col) + d[0] - hx) ** 2
+                        + (round(self.row) + d[1] - hy) ** 2
+                    )
                     self.dir = options[0]
                 elif self.frightened:
                     # Maximize distance from player
@@ -389,7 +408,11 @@ class Game:
                     break
         # If eaten ghosts reach home, revive
         for g in self.ghosts:
-            if g.eaten and int(round(g.col)) == g.home[0] and int(round(g.row)) == g.home[1]:
+            if (
+                g.eaten
+                and int(round(g.col)) == g.home[0]
+                and int(round(g.row)) == g.home[1]
+            ):
                 g.eaten = False
                 g.frightened = False
 
@@ -397,7 +420,7 @@ class Game:
         pressed = pygame.key.get_pressed()
         self.player.handle_input(pressed)
         power_trigger = self.player.update(self.maze, dt)
-        if power_trigger == 'power':
+        if power_trigger == "power":
             self.set_power_mode()
         # Update ghosts
         ppos = (int(round(self.player.col)), int(round(self.player.row)))
@@ -422,7 +445,9 @@ class Game:
     def draw_hud(self, surf):
         hud_rect = pygame.Rect(0, ROWS * TILE_SIZE, WIDTH, 60)
         pygame.draw.rect(surf, BLACK, hud_rect)
-        pygame.draw.line(surf, GRAY, (0, ROWS * TILE_SIZE), (WIDTH, ROWS * TILE_SIZE), 2)
+        pygame.draw.line(
+            surf, GRAY, (0, ROWS * TILE_SIZE), (WIDTH, ROWS * TILE_SIZE), 2
+        )
         score_s = self.font.render(f"Score: {self.player.score}", True, WHITE)
         lives_s = self.font.render(f"Lives: {self.player.lives}", True, WHITE)
         state_s = self.font.render(f"Mode: {self.state}", True, WHITE)
@@ -435,7 +460,7 @@ class Game:
             surf.blit(timer_s, (480, ROWS * TILE_SIZE + 10))
         if self.state == STATE_GAMEOVER:
             over = self.big_font.render("GAME OVER - Press R to Restart", True, WHITE)
-            rect = over.get_rect(center=(WIDTH//2, ROWS * TILE_SIZE + 35))
+            rect = over.get_rect(center=(WIDTH // 2, ROWS * TILE_SIZE + 35))
             surf.blit(over, rect)
 
     def draw(self):
@@ -454,7 +479,7 @@ class Game:
             if event.type == KEYDOWN:
                 if event.key == K_ESCAPE:
                     return False
-                if self.state == STATE_GAMEOVER and event.unicode.lower() == 'r':
+                if self.state == STATE_GAMEOVER and event.unicode.lower() == "r":
                     # restart
                     old_score = 0
                     self.reset_level(full_reset=True)
